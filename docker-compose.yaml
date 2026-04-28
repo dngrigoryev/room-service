@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - HTTP_PORT=${HTTP_PORT:-8080}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-pguser}
+      - DB_PASSWORD=${DB_PASSWORD:-pgpassword}
+      - DB_NAME=${DB_NAME:-room_booking}
+      - JWT_SECRET=${JWT_SECRET:-secret-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:17
+    environment:
+      - POSTGRES_DB=${DB_NAME:-room_booking}
+      - POSTGRES_USER=${DB_USER:-pguser}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-pgpassword}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pguser} -d ${DB_NAME:-room_booking}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+volumes:
+  postgres-data:
+
+networks:
+  app-network:
